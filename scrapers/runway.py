@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
@@ -31,12 +32,16 @@ class RunwayScraper(BaseScraper):
         self.url = self.URL.format(inventory_id=inventory_id)
 
     def _fetch_html(self) -> str:
+        logging.info(f'Fetching HTML from {self.url}.')
         resp = requests.get(self.url)
+        if resp.status_code != 200:
+            raise RuntimeError(f'Error when fetching from HTML from {self.url}.')
         html = resp.text
         return html
     
     @staticmethod
-    def _process_html(html: str) -> dict[str, list[RawSpecInfo]]:
+    def _extract_raw_inventory(html: str) -> dict[str, list[RawSpecInfo]]:
+        logging.info('Extracting raw inventory from HTML.')
         soup = BeautifulSoup(html, features='html.parser')
         shopping_area = soup.find('ul', {'class': 'shopping_area_ul_01'})
         raw = {}
@@ -51,9 +56,10 @@ class RunwayScraper(BaseScraper):
                 raw[color].append(RawSpecInfo(size=size, status=status))
         return raw
     
-    def _parse_to_dataframe(self, raw: dict[str, list[RawSpecInfo]], timestamp: dt.datetime) -> pd.DataFrame:
+    def _parse_to_dataframe(self, raw_inventory: dict[str, list[RawSpecInfo]], timestamp: dt.datetime) -> pd.DataFrame:
+        logging.info('Parsing raw inventory to DataFrame.')
         item_infos = []
-        for color, raw_spec_infos in raw.items():
+        for color, raw_spec_infos in raw_inventory.items():
             for raw_spec_info in raw_spec_infos:
                 item_info = {}
                 item_info['inventory_id'] = self.inventory_id
@@ -82,7 +88,8 @@ class RunwayScraper(BaseScraper):
 
     def scrape(self) -> pd.DataFrame:
         timestamp = dt.datetime.now()
+        logging.info(f'Scraping at {timestamp}.')
         html = self._fetch_html()
-        raw = self._process_html(html)
-        inventory = self._parse_to_dataframe(raw, timestamp)
+        raw_inventory = self._extract_raw_inventory(html)
+        inventory = self._parse_to_dataframe(raw_inventory, timestamp)
         return inventory
