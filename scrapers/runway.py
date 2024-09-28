@@ -22,6 +22,7 @@ class ItemInfo(BaseModel):
     is_available: bool
     amount: int | None
     timestamp: dt.datetime
+    url: str
 
 
 class RunwayScraper(BaseScraper):
@@ -71,6 +72,7 @@ class RunwayScraper(BaseScraper):
                 else:
                     item_info['amount'] = None
                 item_info['timestamp'] = timestamp
+                item_info['url'] = self.url
                 item_infos.append(ItemInfo(**item_info))
         inventory = pd.DataFrame.from_records([x.dict() for x in item_infos])
         inventory['amount'] = inventory['amount'].replace({None: np.nan})
@@ -81,7 +83,8 @@ class RunwayScraper(BaseScraper):
                 'size': 'str',
                 'is_available': 'bool',
                 'amount': 'float',
-                'timestamp': 'datetime64[ns]'
+                'timestamp': 'datetime64[ns]',
+                'url': 'str'
             }
         )
         return inventory
