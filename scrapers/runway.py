@@ -35,7 +35,7 @@ class RunwayScraper(BaseScraper):
         logging.info(f'Fetching HTML from {self.url}.')
         resp = requests.get(self.url)
         if resp.status_code != 200:
-            raise RuntimeError(f'Error when fetching from HTML from {self.url}.')
+            raise RuntimeError(f'Error when fetching HTML from {self.url} for inventory_id: {self.inventory_id}.')
         html = resp.text
         return html
     
