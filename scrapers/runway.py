@@ -91,7 +91,7 @@ class RunwayScraper(BaseScraper):
 
     def scrape(self) -> pd.DataFrame:
         timestamp = dt.datetime.now()
-        logging.info(f'Scraping at {timestamp}.')
+        logging.info(f'Scraping at {timestamp} for inventory ID: {self.inventory_id}.')
         html = self._fetch_html()
         raw_inventory = self._extract_raw_inventory(html)
         inventory = self._parse_to_dataframe(raw_inventory, timestamp)
