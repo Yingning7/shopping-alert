@@ -4,7 +4,7 @@ from typing import Any
 import pandas as pd
 
 
-class BaseScraper:
+class BaseScraper(ABC):
     URL = ...
 
     @abstractmethod
