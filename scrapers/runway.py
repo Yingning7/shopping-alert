@@ -4,95 +4,147 @@ import logging
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
 import pandas as pd
-import numpy as np
 import requests
+import pytz
 
 from .base import BaseScraper
 
 
-class RawSpecInfo(BaseModel):
+class Price(BaseModel):
+    original: float
+    current: float
+    currency: str
+
+
+class Spec(BaseModel):
     size: str
     status: str
 
+    @property
+    def is_available(self) -> bool:
+        return self.status != 'SOLD OUT'
+    
+    @property
+    def unit_left(self) -> float:
+        if self.status.startswith('残り') and self.status.endswith('点'):
+            return float(int(self.status.replace('点', '').replace('残り', '')))
+        return float('NaN')
+
+
+class Detail(BaseModel):
+    color: str
+    specs: list[Spec]
+
 
 class ItemInfo(BaseModel):
-    inventory_id: str
+    name: str
+    brand: str
+    price: Price
+    details: list[Detail]
+
+
+class Record(BaseModel):
+    item_id: str
+    name: str
+    brand: str
+    price_original: float
+    price_current: float
+    price_currency: str
     color: str
     size: str
     is_available: bool
-    amount: int | None
-    timestamp: dt.datetime
+    unit_left: float
+    asof: dt.datetime
     url: str
+
+    @classmethod
+    def get_df_dtypes(cls) -> dict[str, str]:
+        return {
+            'item_id': 'str',
+            'name': 'str',
+            'brand': 'str',
+            'price_original': 'float',
+            'price_current': 'float',
+            'price_currency': 'str',
+            'color': 'str',
+            'size': 'str',
+            'is_available': 'bool',
+            'unit_left': 'float',
+            'asof': 'datetime64[ns, UTC]',
+            'url': 'str'
+        }
 
 
 class RunwayScraper(BaseScraper):
-    URL = 'https://runway-webstore.com/ap/item/i/m/{inventory_id}'
+    URL = 'https://runway-webstore.com/ap/item/i/m/{item_id}'
 
-    def __init__(self, inventory_id: str) -> None:
-        self.inventory_id = inventory_id
-        self.url = self.URL.format(inventory_id=inventory_id)
+    def __init__(self, item_id: str) -> None:
+        self.item_id = item_id
+        self.url = self.URL.format(item_id=item_id)
 
     def _fetch_html(self) -> str:
         logging.info(f'Fetching HTML from {self.url}.')
         resp = requests.get(self.url)
         if resp.status_code != 200:
-            raise RuntimeError(f'Error when fetching HTML from {self.url} for inventory ID: {self.inventory_id}.')
+            raise RuntimeError(f'Error when fetching HTML from {self.url} for Item ID: {self.item_id}.')
         html = resp.text
         return html
     
     @staticmethod
-    def _extract_raw_inventory(html: str) -> dict[str, list[RawSpecInfo]]:
-        logging.info('Extracting raw inventory from HTML.')
+    def _extract_item_info(html: str) -> ItemInfo:
+        logging.info('Extracting item information from HTML.')
         soup = BeautifulSoup(html, features='html.parser')
-        shopping_area = soup.find('ul', {'class': 'shopping_area_ul_01'})
-        raw = {}
-        color_lis = shopping_area.find_all('li', recursive=False)
+        name = 'N/A'
+        brand = 'N/A'
+        price = Price(original=float('NaN'), current=float('NaN'), currency='N/A')
+        detail_ul = soup.find('ul', {'class': 'shopping_area_ul_01'})
+        color_lis = detail_ul.find_all('li', recursive=False)
+        details = []
         for color_li in color_lis:
             color = color_li.div.dl.dd.text.strip()
-            raw[color] = []
+            specs = []
             spec_lis = color_li.find('div', {'class': 'choose_item'}).find('ul', {'class': 'shopping_area_ul_02'}).find_all('li', recursive=False)
             for spec_li in spec_lis:
                 size = spec_li.dt.text.strip()
                 status = spec_li.dd.text.strip()
-                raw[color].append(RawSpecInfo(size=size, status=status))
-        return raw
-    
-    def _parse_to_dataframe(self, raw_inventory: dict[str, list[RawSpecInfo]], timestamp: dt.datetime) -> pd.DataFrame:
-        logging.info('Parsing raw inventory to DataFrame.')
-        item_infos = []
-        for color, raw_spec_infos in raw_inventory.items():
-            for raw_spec_info in raw_spec_infos:
-                item_info = {}
-                item_info['inventory_id'] = self.inventory_id
-                item_info['color'] = color
-                item_info['size'] = raw_spec_info.size
-                item_info['is_available'] = raw_spec_info.status != 'SOLD OUT'
-                if raw_spec_info.status.startswith('残り') and raw_spec_info.status.endswith('点'):
-                    item_info['amount'] = int(raw_spec_info.status.replace('点', '').replace('残り', ''))
-                else:
-                    item_info['amount'] = None
-                item_info['timestamp'] = timestamp
-                item_info['url'] = self.url
-                item_infos.append(ItemInfo(**item_info))
-        inventory = pd.DataFrame.from_records([x.dict() for x in item_infos])
-        inventory['amount'] = inventory['amount'].replace({None: np.nan})
-        inventory = inventory.astype(
-            {
-                'inventory_id': 'str',
-                'color': 'str',
-                'size': 'str',
-                'is_available': 'bool',
-                'amount': 'float',
-                'timestamp': 'datetime64[ns]',
-                'url': 'str'
-            }
+                specs.append(Spec(size=size, status=status))
+            details.append(Detail(color=color, specs=specs))
+        item_info = ItemInfo(
+            name=name,
+            brand=brand,
+            price=price,
+            details=details
         )
-        return inventory
+        return item_info
+    
+    def _parse_item_info(self, item_info: ItemInfo, asof: dt.datetime) -> pd.DataFrame:
+        logging.info('Parsing item information to DataFrame.')
+        records = []
+        for detail in item_info.details:
+            for spec in detail.specs:
+                records.append(
+                    Record(
+                        item_id=self.item_id,
+                        name=item_info.name,
+                        brand=item_info.brand,
+                        price_original=item_info.price.original,
+                        price_current=item_info.price.current,
+                        price_currency=item_info.price.currency,
+                        color=detail.color,
+                        size=spec.size,
+                        is_available=spec.is_available,
+                        unit_left=spec.unit_left,
+                        asof=asof,
+                        url=self.url
+                    )
+                )
+        data = pd.DataFrame.from_records([record.dict() for record in records]).astype(Record.get_df_dtypes())
+        return data
 
     def scrape(self) -> pd.DataFrame:
-        timestamp = dt.datetime.now()
-        logging.info(f'Scraping at {timestamp} for inventory ID: {self.inventory_id}.')
+        asof = pytz.timezone('Europe/London').localize(dt.datetime.now()).astimezone(pytz.UTC)
+        logging.info(f'Scraping at {asof} for Item ID: {self.item_id}.')
         html = self._fetch_html()
-        raw_inventory = self._extract_raw_inventory(html)
-        inventory = self._parse_to_dataframe(raw_inventory, timestamp)
-        return inventory
+        item_info = self._extract_item_info(html)
+        data = self._parse_item_info(item_info, asof)
+        return data
