@@ -94,9 +94,15 @@ class RunwayScraper(BaseScraper):
     def _extract_item_info(html: str) -> ItemInfo:
         logging.info('Extracting item information from HTML.')
         soup = BeautifulSoup(html, features='html.parser')
-        name = 'N/A'
-        brand = 'N/A'
-        price = Price(original=float('NaN'), current=float('NaN'), currency='N/A')
+        name = soup.find('h1',{'class', 'item_detail_productname'}).text.strip()
+        brand = soup.find('p', {'class', 'item_detail_brandname'}).text.strip()
+        if soup.find('p', {'class', 'proper'}):
+            original = soup.find('p', {'class', 'proper'}).text.replace(',', '').replace('円(税込)', '').strip()
+            current = original
+        else:
+            original = soup.find('del').text.replace(',', '').replace('円(税込)', '').strip()
+            current = soup.find('span', {'class', 'sale_price'}).text.replace(',', '').replace('円(税込)', '').strip()
+        price = Price(original=float(original), current=float(current), currency='JPY')
         detail_ul = soup.find('ul', {'class': 'shopping_area_ul_01'})
         color_lis = detail_ul.find_all('li', recursive=False)
         details = []
