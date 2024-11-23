@@ -27,7 +27,7 @@ class Spec(BaseModel):
     @property
     def unit_left(self) -> float:
         if self.status.startswith('残り') and self.status.endswith('点'):
-            return float(int(self.status.replace('点', '').replace('残り', '')))
+            return float(self.status.replace('点', '').replace('残り', ''))
         return float('NaN')
 
 
