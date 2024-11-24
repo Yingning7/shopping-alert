@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 import pytz
 
-from .base import BaseScraper
+from base import BaseRecord, BaseScraper
 
 
 class Price(BaseModel):
@@ -43,7 +43,7 @@ class ItemInfo(BaseModel):
     details: list[Detail]
 
 
-class Record(BaseModel):
+class Record(BaseRecord):
     item_id: str
     name: str
     brand: str
@@ -75,7 +75,7 @@ class Record(BaseModel):
         }
 
 
-class RunwayScraper(BaseScraper):
+class Scraper(BaseScraper):
     URL = 'https://runway-webstore.com/ap/item/i/m/{item_id}'
 
     def __init__(self, item_id: str) -> None:
