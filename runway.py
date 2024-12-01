@@ -73,6 +73,34 @@ class Record(BaseRecord):
             'asof': 'datetime64[ns, UTC]',
             'url': 'str'
         }
+    
+    @classmethod
+    def get_db_table_dtypes(cls) -> dict[str, str]:
+        return {
+            'item_id': 'TEXT NOT NULL',
+            'name': 'TEXT NOT NULL',
+            'brand': 'TEXT NOT NULL',
+            'price_original': 'DOUBLE PRECISION NOT NULL',
+            'price_current': 'DOUBLE PRECISION NOT NULL',
+            'price_currency': 'TEXT NOT NULL',
+            'color': 'TEXT NOT NULL',
+            'size': 'TEXT NOT NULL',
+            'is_available': 'BOOLEAN NOT NULL',
+            'unit_left': 'DOUBLE PRECISION',
+            'asof': 'TIMESTAMP WITH TIME ZONE NOT NULL',
+            'url': 'TEXT NOT NULL',
+            'PRIMARY KEY': '(item_id, color, size, asof)'
+        }
+    
+    @classmethod
+    def get_db_index(cls) -> dict[str, str]:
+        return {
+            'item_id': 'item_id',
+            'color': 'color',
+            'size': 'size',
+            'asof': 'asof',
+            'item_id_asof': 'item_id, asof'
+        }
 
 
 class Scraper(BaseScraper):

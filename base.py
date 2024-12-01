@@ -18,8 +18,14 @@ class BaseScraper(ABC):
 
 
 class BaseRecord(BaseModel):
-    pass
-
     @classmethod
     def get_df_dtypes(cls) -> dict[str, str]:
+        pass
+
+    @classmethod
+    def get_db_table_dtypes(cls) -> dict[str, str]:
+        pass
+
+    @classmethod
+    def get_db_index(cls) -> dict[str, str]:
         pass
