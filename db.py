@@ -101,4 +101,3 @@ def query_data(query_sql: str, dtypes: dict[str, str]) -> pd.DataFrame:
             return df
     
 
-
