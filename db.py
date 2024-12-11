@@ -11,11 +11,13 @@ DB_CREDENTIALS = {
     'port': 5432
 }
 
+
 def init_schema() -> None:
     with psycopg2.connect(**DB_CREDENTIALS) as conn:
         with conn.cursor() as cursor:
             cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME}")
         conn.commit()
+
 
 def check_table_exists(table_name: str) -> bool:
     with psycopg2.connect(**DB_CREDENTIALS) as conn:
@@ -52,15 +54,12 @@ def create_table(table_name: str, table_def: dict[str, str], index_def: dict[str
         conn.commit()
 
 
-def insert_data(schema_name: str, table_name: str, table_def: dict[str, str], df: pd.DataFrame) -> None:
+def insert_data(table_name: str, table_def: dict[str, str], df: pd.DataFrame) -> None:
     df = df.replace({np.nan: None})
-
-    # TODO: Add the INSERT INTO table_name (column1, column2, column3) VALUES
     insert_sql_list = []
     for k in table_def:
         insert_sql_list.append(k)
-    insert_sql = f'INSERT INTO {schema_name}.{table_name}(' + f"{',\n'.join(insert_sql_list[:-1])})"
-
+    insert_sql = f'INSERT INTO {SCHEMA_NAME}.{table_name}(' + f"{',\n'.join(insert_sql_list[:-1])})"
     values_sql_list = []
     for _, row in df.replace({np.nan: None}).iterrows():
         single_value_sql_list = []
@@ -77,9 +76,6 @@ def insert_data(schema_name: str, table_name: str, table_def: dict[str, str], df
                 single_value_sql_list.append(str(row[col_name]))
         values_sql_list.append(f"({', '.join(single_value_sql_list)})")
     values_sql = "VALUES" + f"{',\n'.join(values_sql_list)};"
-
-    # TODO: use conn and cursor, execute the insertion sql, remember to `conn.commit()` 
-    # just like `init_schema` function
     with psycopg2.connect(**DB_CREDENTIALS) as conn:
         with conn.cursor() as cursor:
             cursor.execute(insert_sql+values_sql)
@@ -87,17 +83,10 @@ def insert_data(schema_name: str, table_name: str, table_def: dict[str, str], df
 
 
 def query_data(query_sql: str, dtypes: dict[str, str]) -> pd.DataFrame:
-    # TODO: use conn and cursor, execute the query_sql and cursor.fetchall(), it will be a list of tuples
-    # TODO: convert the list of tuples to a pandas DataFrame, with column name set
-    # search online / ask ChatGPT, how to convert a list of tuples to a pandas dataframe
-    # and how to get the column names from the psycopg2 after `cursor.fetchall()`
-    # TODO: set the data types for all columns of resultant pandas DataFrame, using the `dtypes` provided
     with psycopg2.connect(**DB_CREDENTIALS) as conn:
         with conn.cursor() as cursor:
             cursor.execute(query_sql)
             data = cursor.fetchall()
             column_names = [desc[0] for desc in cursor.description]
-            df = pd.DataFrame(data, columns=column_names).astype(dtypes)
-            return df
-    
-
+    df = pd.DataFrame(data, columns=column_names).astype(dtypes)
+    return df
