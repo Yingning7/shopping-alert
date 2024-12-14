@@ -98,3 +98,10 @@ def parse_data(item_id: str, data: list[dict[str, str]]) -> pd.DataFrame:
     df['url'] = URL.format(item_id=item_id)
     df = df.astype(DTYPES)
     return df
+
+
+def scrape(item_id: str) -> pd.DataFrame:
+    html = fetch_html(item_id)
+    data = extract_data(html)
+    df = parse_data(item_id, data)
+    return df
