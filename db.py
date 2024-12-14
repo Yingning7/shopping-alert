@@ -55,13 +55,13 @@ def create_table(table_name: str, table_def: dict[str, str], index_def: dict[str
 
 
 def insert_data(table_name: str, table_def: dict[str, str], df: pd.DataFrame) -> None:
-    df = df.replace({np.nan: None})
+    df = df.copy().replace({np.nan: None})
     insert_sql_list = []
     for k in table_def:
         insert_sql_list.append(k)
     insert_sql = f'INSERT INTO {SCHEMA_NAME}.{table_name}(' + f"{',\n'.join(insert_sql_list[:-1])})"
     values_sql_list = []
-    for _, row in df.replace({np.nan: None}).iterrows():
+    for _, row in df.iterrows():
         single_value_sql_list = []
         for col_name, dtype in table_def.items():
             if col_name.startswith('PRIMARY KEY'):
