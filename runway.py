@@ -105,3 +105,11 @@ def scrape(item_id: str) -> pd.DataFrame:
     data = extract_data(html)
     df = parse_data(item_id, data)
     return df
+
+def alert(df_new: pd.DataFrame, df_old: pd.DataFrame, color: str, size: str):
+    joined = df_old.merge(df_new, on=['item_id', 'name', 'brand', 'currency', 'color', 'size', 'url'], how='inner')
+    status_change = joined.loc[(joined['is_available_x'] == False) & (joined['is_available_y'] == True)]
+    unit_change = joined.loc[(joined['unit_left_x'].isna()) & (joined['unit_left_y'])]
+    status_change_items = status_change.loc[(status_change['color']==color) & (status_change['size'] == size)]
+    unit_change_items = unit_change.loc[(unit_change['color']==color) & (unit_change['size'] == size)]
+    
