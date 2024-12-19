@@ -111,7 +111,24 @@ def scrape(item_id: str) -> pd.DataFrame:
     df = parse_data(item_id, data)
     return df
 
-def email(ids):
+def email(status, unit):
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; }}
+        </style>
+    </head>
+    <body>
+        <h2>These are the items back in stock:</h2>
+        {status}
+        <hr>
+        <h2>These are the items that the stock is running low:</h2>
+        {unit}
+    </body>
+    </html>
+    """
     with open(Path('~/Documents/tokens.yaml').expanduser(), 'r') as fp:
         tokens = yaml.safe_load(fp)
     # Email credentials
@@ -121,7 +138,7 @@ def email(ids):
 
     # Email content
     subject = "Runway Alert"
-    body = "Here is the data:\n" + "\n".join(ids)
+    
 
     # Create a MIME message
     message = MIMEMultipart()
@@ -130,7 +147,7 @@ def email(ids):
     message["Subject"] = subject
 
     # Attach the plain text body
-    message.attach(MIMEText(body, "plain"))
+    message.attach(MIMEText(html_content, "html"))
 
     # Send the email
     try:
@@ -147,13 +164,10 @@ def alert(df_new: pd.DataFrame, df_old: pd.DataFrame, color: str, size: str):
     joined = df_old.merge(df_new, on=['item_id', 'name', 'brand', 'currency', 'color', 'size', 'url'], how='inner')
     status_change = joined.loc[(joined['is_available_x'] == False) & (joined['is_available_y'] == True)]
     unit_change = joined.loc[(joined['unit_left_x'].isna()) & (joined['unit_left_y'])]
-    status_change_items = status_change.loc[(status_change['color'] == color) & (status_change['size'] == size)]
-    status_change_ids = [id for id in status_change_items['item_id']]
-    unit_change_items = unit_change.loc[(unit_change['color'] == color) & (unit_change['size'] == size)]
-    unit_change_ids = [id for id in unit_change_items['item_id']]
-    if status_change_items.empty == False:
-        return email(status_change_ids)
-    elif unit_change_items.empty == False:
-        return email(unit_change_ids)
+    status_change_items = status_change.loc[(status_change['color'] == color) & (status_change['size'] == size)][['name', 'brand', 'color', 'size', 'item_id', 'url', 'is_available_x', 'is_available_y']]
+    #status_change_ids = [id for id in status_change_items['item_id']]
+    unit_change_items = unit_change.loc[(unit_change['color'] == color) & (unit_change['size'] == size)][['name', 'brand', 'color', 'size', 'item_id', 'url', 'unit_left_x', 'unit_left_y']]
+    #unit_change_ids = [id for id in unit_change_items['item_id']]
+    return email(status_change_items.to_html(), unit_change_items.to_html())
     
 
