@@ -17,13 +17,13 @@ if __name__ == '__main__':
         logging.info(f'Working on {platform_name}.')
         platform = importlib.import_module(platform_name)
         with open(config_path, 'r') as file:
-            items = yaml.safe_load(file)
-        for item in items:
-            logging.info(f'Working on {platform_name}: {item}.')
+            kwargs_list = yaml.safe_load(file)
+        for kwargs in kwargs_list:
+            logging.info(f'Working on {platform_name}: {kwargs}.')
             try:
-                df = platform.scrape(**item)
+                df = platform.scrape(**kwargs)
             except Exception as error:
-                logging.error(f'Failed to scrape {item}. Error: {error}')
+                logging.error(f'Failed to scrape {kwargs}. Error: {error}')
             else:
                 if not check_table_exists(platform.TABLE_NAME):
                     create_table(platform.TABLE_NAME, platform.TABLE_DEF, platform.INDEX_DEF)
