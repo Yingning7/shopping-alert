@@ -11,6 +11,8 @@ import requests
 
 import yaml
 
+from db import SCHEMA_NAME, query_data
+
 URL = 'https://runway-webstore.com/ap/item/i/m/{item_id}'
 DTYPES = {
     'item_id': 'str',
@@ -115,7 +117,23 @@ def scrape(item_id: str) -> pd.DataFrame:
     return df
 
 
-def email(status, unit):
+def fetch_last(item_id: str) -> pd.DataFrame:
+    df_old = query_data(
+        f"""
+        SELECT
+            *
+        FROM
+            {SCHEMA_NAME}.{TABLE_NAME}
+        WHERE
+            item_id = '{item_id}'
+            AND asof = (SELECT MAX(asof) FROM {SCHEMA_NAME}.{TABLE_NAME} WHERE item_id = '{item_id}')
+        """,
+        DTYPES
+    )
+    return df_old
+
+
+def email(status: str, unit: str) -> None:
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -154,10 +172,12 @@ def email(status, unit):
         logging.error(f"Failed to send email: {e}")
 
 
-def alert(df_new: pd.DataFrame, df_old: pd.DataFrame, color: str, size: str):
+def alert(df_new: pd.DataFrame, df_old: pd.DataFrame) -> None:
     joined = df_old.merge(df_new, on=['item_id', 'name', 'brand', 'currency', 'color', 'size', 'url'], how='inner')
     status_change = joined.loc[(joined['is_available_x'] == False) & (joined['is_available_y'] == True)]
-    unit_change = joined.loc[(joined['unit_left_x'].isna()) & (joined['unit_left_y'])]
-    status_change_items = status_change.loc[(status_change['color'] == color) & (status_change['size'] == size)][['name', 'brand', 'color', 'size', 'item_id', 'url', 'is_available_x', 'is_available_y']]
-    unit_change_items = unit_change.loc[(unit_change['color'] == color) & (unit_change['size'] == size)][['name', 'brand', 'color', 'size', 'item_id', 'url', 'unit_left_x', 'unit_left_y']]
-    return email(status_change_items.to_html(), unit_change_items.to_html())
+    unit_change = joined.loc[joined['unit_left_x'] > joined['unit_left_y']]
+    if not (status_change.empty and unit_change.empty):
+        logging.info('Sending email.')
+        email(status_change.to_html(), unit_change.to_html())
+    else:
+        logging.info('No changes to alert.')
