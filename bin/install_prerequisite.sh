@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./bin/vars.sh
+CONDA_ENV_NAME="shopping-alert"
+CONDA_REQUIREMENT_FILE="conda-requirements.txt"
 
 conda create -n $CONDA_ENV_NAME --file "./bin/$CONDA_REQUIREMENT_FILE" -y
-sudo docker pull "${POSTGRES_IMG_NAME}:${POSTGRES_IMG_TAG}"
