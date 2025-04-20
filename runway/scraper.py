@@ -38,7 +38,7 @@ def fetch_html(item_id: str) -> str:
 def extract_data(html: str) -> list[dict[str, int | float | str]]:
     logger.info('Extracting data.')
     soup = BeautifulSoup(html, features='html.parser')
-    name = soup.find('h1',{'class', 'item_detail_productname'}).text.strip()
+    name = soup.find('h1', {'class', 'item_detail_productname'}).text.strip()
     brand = soup.find('p', {'class', 'item_detail_brandname'}).text.strip()
     if soup.find('p', {'class', 'proper'}):
         original_price = soup.find('p', {'class', 'proper'}).text.replace(',', '').replace('円(税込)', '').strip()
