@@ -4,14 +4,9 @@ from pathlib import Path
 import smtplib
 import logging
 
-from bs4 import BeautifulSoup
 import pandas as pd
-import numpy as np
-import requests
 
 import yaml
-
-from db import SCHEMA_NAME, query_data
 
 
 def email(status: str, unit: str) -> None:
