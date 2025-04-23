@@ -35,7 +35,7 @@ def fetch_html(item_id: str) -> str:
     return html
 
 
-def extract_data(html: str) -> list[dict[str, int | float | str]]:
+def extract_data(html: str) -> list[dict[str, str]]:
     logger.info('Extracting data.')
     soup = BeautifulSoup(html, features='html.parser')
     name = soup.find('h1', {'class', 'item_detail_productname'}).text.strip()

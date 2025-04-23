@@ -6,7 +6,7 @@ if __name__ == '__main__':
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
-        page.goto('https://zozo.jp/shop/mercuryduo/goods-sale/87837454/?did=142436883')
+        page.goto('https://zozo.jp/shop/mercuryduo/goods-sale/87837454/?did=142436883&rid=1006')
         html = page.content()
         browser.close()
     
@@ -16,5 +16,3 @@ if __name__ == '__main__':
 
 with open('page.html', 'w') as fp:
     fp.write(html)
-
-
