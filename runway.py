@@ -1,3 +1,4 @@
+import datetime as dt
 import logging
 
 import requests
@@ -6,23 +7,11 @@ from bs4 import BeautifulSoup
 import numpy as np
 import pandas as pd
 
+from db import PD_DTYPES
+
 logger = logging.getLogger(__file__)
 
 URL = 'https://runway-webstore.com/ap/item/i/m/{item_id}'
-DTYPES = {
-    'item_id': 'str',
-    'name': 'str',
-    'brand': 'str',
-    'original_price': 'float',
-    'current_price': 'float',
-    'currency': 'str',
-    'color': 'str',
-    'size': 'str',
-    'is_available': 'bool',
-    'unit_left': 'float',
-    'url': 'str',
-    'asof': 'datetime64[ns, UTC]'
-}
 
 
 def fetch_html(item_id: str) -> str:
@@ -35,7 +24,7 @@ def fetch_html(item_id: str) -> str:
     return html
 
 
-def extract_data(html: str) -> list[dict[str, int | float | str]]:
+def extract_data(html: str) -> list[dict[str, str]]:
     logger.info('Extracting data.')
     soup = BeautifulSoup(html, features='html.parser')
     name = soup.find('h1', {'class', 'item_detail_productname'}).text.strip()
@@ -78,10 +67,11 @@ def parse_data(item_id: str, data: list[dict[str, str]]) -> pd.DataFrame:
     mask = df['status'].str.startswith('残り') & df['status'].str.endswith('点')
     df['unit_left'] = np.where(mask, df['status'].str.replace('点', '').str.replace('残り', ''), np.nan)
     df = df.drop(labels='status', axis=1)
+    df['platform'] = 'runway'
     df['item_id'] = item_id
     df['url'] = URL.format(item_id=item_id)
-    df['asof'] = pd.Timestamp.now().tz_localize('Europe/London').tz_convert('UTC')
-    df = df.astype(DTYPES)[list(DTYPES.keys())]
+    df['asof'] = dt.datetime.now(tz=dt.timezone.utc)
+    df = df.astype(PD_DTYPES)[list(PD_DTYPES.keys())]
     return df
 
 
@@ -91,3 +81,8 @@ def scrape(item_id: str) -> pd.DataFrame:
     data = extract_data(html)
     df = parse_data(item_id, data)
     return df
+
+
+if __name__ == '__main__':
+    df = scrape('0225103023')
+    pass
