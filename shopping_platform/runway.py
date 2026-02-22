@@ -1,0 +1,86 @@
+import regex as re
+import logging
+
+from bs4 import BeautifulSoup
+import requests
+
+from shopping_platform import BaseRecord, BasePlatform
+
+logger = logging.getLogger(__file__)
+
+
+class RunwayRecord(BaseRecord):
+    original_price: int
+    current_price: int
+    inventory: int | None
+
+
+class RunwayPlatform(BasePlatform):
+    _BASE_URL = "https://runway-webstore.com/ap/item/i/m/{item_id}"
+
+    def acquire(self, item_id: str) -> str:
+        logger.info(f"Acquiring item id: {item_id}.")
+        full_url = self._BASE_URL.format(item_id=item_id)
+        resp = requests.get(full_url)
+        html = resp.text
+        return html
+
+    def extract(self, html: str) -> list[dict[str, str]]:
+        logger.info("Extracting data.")
+        soup = BeautifulSoup(html, features="html.parser")
+        name = soup.find("h1", {"class", "item_detail_productname"}).text
+        brand = soup.find("p", {"class", "item_detail_brandname"}).text
+        if soup.find("p", {"class", "proper"}):
+            original_price = soup.find("p", {"class", "proper"}).text.replace(",", "").replace("円(税込)", "")
+            current_price = original_price
+        else:
+            original_price = soup.find("del").text.replace(",", "").replace("円(税込)", "")
+            current_price = soup.find("span", {"class", "sale_price"}).text.replace(",", "").replace("円(税込)", "")
+        detail_ul = soup.find("ul", {"class": "shopping_area_ul_01"})
+        colour_lis = detail_ul.find_all("li", recursive=False)
+        raw_data = []
+        for colour_li in colour_lis:
+            colour = colour_li.div.dl.dd.text
+            spec_lis = colour_li.find("div", {"class": "choose_item"}).find("ul", {"class": "shopping_area_ul_02"}).find_all("li", recursive=False)
+            for spec_li in spec_lis:
+                size = spec_li.dt.text
+                status = spec_li.dd.text
+                raw_data.append(
+                    {
+                        "name": name,
+                        "brand": brand,
+                        "currency": "JPY",
+                        "colour": colour,
+                        "size": size,
+                        "original_price": original_price,
+                        "current_price": current_price,
+                        "status": status
+                    }
+                )
+        return raw_data
+
+    def transform(self, raw_data: list[dict[str, str]]) -> list[RunwayRecord]:
+        logger.info("Transforming data.")
+        transformed_data = []
+        for raw_record in raw_data:
+            in_stock = raw_record["status"].strip() != "SOLD OUT"
+            match_result = re.fullmatch(r"^残り(\d+)点$", raw_record["status"].strip())
+            if match_result is not None:
+                inventory = match_result.group(1)
+            else:
+                inventory = None
+            transformed_data.append(
+                RunwayRecord(
+                    **raw_record,
+                    in_stock=in_stock,
+                    inventory=inventory
+                )
+            )
+        return transformed_data
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    runway_platform = RunwayPlatform()
+    transformed_data = runway_platform.run("0725627802")
+    pass

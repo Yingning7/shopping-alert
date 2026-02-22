@@ -67,7 +67,7 @@ def parse_data(item_id: str, data: list[dict[str, str]]) -> pd.DataFrame:
     mask = df['status'].str.startswith('残り') & df['status'].str.endswith('点')
     df['unit_left'] = np.where(mask, df['status'].str.replace('点', '').str.replace('残り', ''), np.nan)
     df = df.drop(labels='status', axis=1)
-    df['platform'] = 'runway'
+    df['shopping_platform'] = 'runway'
     df['item_id'] = item_id
     df['url'] = URL.format(item_id=item_id)
     df['asof'] = dt.datetime.now(tz=dt.timezone.utc)

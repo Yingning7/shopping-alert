@@ -70,7 +70,7 @@ def parse_data(data: list[dict[str, str]], url: str) -> pd.DataFrame:
     mask = df['status'].str.startswith('残り') & df['status'].str.endswith('点')
     df['unit_left'] = np.where(mask, df['status'].str.replace('点', '').str.replace('残り', ''), np.nan)
     df = df.drop(labels='status', axis=1)
-    df['platform'] = 'zozotown'
+    df['shopping_platform'] = 'zozotown'
     df['url'] = url
     df['asof'] = dt.datetime.now(tz=dt.timezone.utc)
     df = df.astype(PD_DTYPES)[list(PD_DTYPES.keys())]

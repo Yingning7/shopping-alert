@@ -17,7 +17,7 @@ DB_CREDS = {
 }
 
 PD_DTYPES = {
-    'platform': 'str',
+    'shopping_platform': 'str',
     'item_id': 'str',
     'name': 'str',
     'brand': 'str',
@@ -34,7 +34,7 @@ PD_DTYPES = {
 
 TABLE_CREATE_SQL = f"""
     CREATE TABLE {SCHEMA_NAME}.{TABLE_NAME}(
-        platform TEXT NOT NULL,
+        shopping_platform TEXT NOT NULL,
         item_id TEXT NOT NULL,
         name TEXT NOT NULL,
         brand TEXT NOT NULL,
@@ -47,17 +47,17 @@ TABLE_CREATE_SQL = f"""
         unit_left DOUBLE PRECISION,
         url TEXT NOT NULL,
         asof TIMESTAMPTZ NOT NULL,
-        PRIMARY KEY (platform, item_id, color, size, asof)
+        PRIMARY KEY (shopping_platform, item_id, color, size, asof)
     );
-    CREATE INDEX inventory_platform ON {SCHEMA_NAME}.{TABLE_NAME} (platform);
+    CREATE INDEX inventory_platform ON {SCHEMA_NAME}.{TABLE_NAME} (shopping_platform);
     CREATE INDEX inventory_item_id ON {SCHEMA_NAME}.{TABLE_NAME} (item_id);
     CREATE INDEX inventory_asof ON {SCHEMA_NAME}.{TABLE_NAME} (asof);
-    CREATE INDEX inventory_platform_item_id_asof ON {SCHEMA_NAME}.{TABLE_NAME} (platform, item_id, asof);
+    CREATE INDEX inventory_platform_item_id_asof ON {SCHEMA_NAME}.{TABLE_NAME} (shopping_platform, item_id, asof);
 """
 DATA_INSERT_SQL = f"""
-    INSERT INTO {SCHEMA_NAME}.{TABLE_NAME} (platform, item_id, name, brand, original_price, current_price, currency, color, size, is_available, unit_left, url, asof)
+    INSERT INTO {SCHEMA_NAME}.{TABLE_NAME} (shopping_platform, item_id, name, brand, original_price, current_price, currency, color, size, is_available, unit_left, url, asof)
     VALUES
-        (%(platform)s, %(item_id)s, %(name)s, %(brand)s, %(original_price)s, %(current_price)s, %(currency)s, %(color)s, %(size)s, %(is_available)s, %(unit_left)s, %(url)s, %(asof)s)
+        (%(shopping_platform)s, %(item_id)s, %(name)s, %(brand)s, %(original_price)s, %(current_price)s, %(currency)s, %(color)s, %(size)s, %(is_available)s, %(unit_left)s, %(url)s, %(asof)s)
 """
 
 
