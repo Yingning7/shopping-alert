@@ -86,6 +86,6 @@ class ZozotownPlatform(BasePlatform):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    zozo_platform = ZozotownPlatform()
-    transformed_data = zozo_platform.run("https://zozo.jp/shop/dazzlin/goods/100200995/?did=161679313&rid=201165")
+    zozotown_platform = ZozotownPlatform()
+    transformed_data = zozotown_platform.run("https://zozo.jp/shop/dazzlin/goods/100200995/?did=161679313&rid=201165")
     pass
