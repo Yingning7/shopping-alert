@@ -1,17 +1,24 @@
 from abc import ABC, abstractmethod
 from typing import Any
+import datetime as dt
 
 from pydantic import BaseModel, model_validator
 
 
 class BaseRecord(BaseModel):
+    item_id: str
     name: str
     brand: str
     currency: str
-    colour: str
+    color: str
     size: str
+    original_price: int
+    current_price: int
+    inventory: int | None
     in_stock: bool
-
+    url: str
+    asof: dt.datetime
+    
     @model_validator(mode="before")
     @classmethod
     def strip_string(cls, record: dict[str, Any]) -> dict[str, Any]:
@@ -31,11 +38,12 @@ class BasePlatform(ABC):
         pass
 
     @abstractmethod
-    def transform(self, raw_data: list[dict[str, str]]) -> list[BaseRecord]:
+    def transform(self, raw_data: list[dict[str, str]], asof: dt.datetime, *args) -> list[BaseRecord]:
         pass
 
     def run(self, *args) -> list[BaseRecord]:
+        asof = dt.datetime.utcnow()
         html = self.acquire(*args)
         raw_data = self.extract(html)
-        transformed_data = self.transform(raw_data)
+        transformed_data = self.transform(raw_data, asof, *args)
         return transformed_data

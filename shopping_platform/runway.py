@@ -1,5 +1,6 @@
 import regex as re
 import logging
+import datetime as dt
 
 from bs4 import BeautifulSoup
 import requests
@@ -9,18 +10,16 @@ from shopping_platform import BaseRecord, BasePlatform
 logger = logging.getLogger(__file__)
 
 
-class RunwayRecord(BaseRecord):
-    original_price: int
-    current_price: int
-    inventory: int | None
-
-
 class RunwayPlatform(BasePlatform):
     _BASE_URL = "https://runway-webstore.com/ap/item/i/m/{item_id}"
 
-    def acquire(self, item_id: str) -> str:
-        logger.info(f"Acquiring item id: {item_id}.")
+    def _get_full_url(self, item_id: str) -> str:
         full_url = self._BASE_URL.format(item_id=item_id)
+        return full_url
+
+    def acquire(self, item_id: str) -> str:
+        logger.info(f"Acquiring data for item id: {item_id}.")
+        full_url = self._get_full_url(item_id)
         resp = requests.get(full_url)
         html = resp.text
         return html
@@ -37,11 +36,11 @@ class RunwayPlatform(BasePlatform):
             original_price = soup.find("del").text.replace(",", "").replace("円(税込)", "")
             current_price = soup.find("span", {"class", "sale_price"}).text.replace(",", "").replace("円(税込)", "")
         detail_ul = soup.find("ul", {"class": "shopping_area_ul_01"})
-        colour_lis = detail_ul.find_all("li", recursive=False)
+        color_lis = detail_ul.find_all("li", recursive=False)
         raw_data = []
-        for colour_li in colour_lis:
-            colour = colour_li.div.dl.dd.text
-            spec_lis = colour_li.find("div", {"class": "choose_item"}).find("ul", {"class": "shopping_area_ul_02"}).find_all("li", recursive=False)
+        for color_li in color_lis:
+            color = color_li.div.dl.dd.text
+            spec_lis = color_li.find("div", {"class": "choose_item"}).find("ul", {"class": "shopping_area_ul_02"}).find_all("li", recursive=False)
             for spec_li in spec_lis:
                 size = spec_li.dt.text
                 status = spec_li.dd.text
@@ -50,7 +49,7 @@ class RunwayPlatform(BasePlatform):
                         "name": name,
                         "brand": brand,
                         "currency": "JPY",
-                        "colour": colour,
+                        "color": color,
                         "size": size,
                         "original_price": original_price,
                         "current_price": current_price,
@@ -59,7 +58,7 @@ class RunwayPlatform(BasePlatform):
                 )
         return raw_data
 
-    def transform(self, raw_data: list[dict[str, str]]) -> list[RunwayRecord]:
+    def transform(self, raw_data: list[dict[str, str]], asof: dt.datetime, item_id: str) -> list[BaseRecord]:
         logger.info("Transforming data.")
         transformed_data = []
         for raw_record in raw_data:
@@ -70,10 +69,13 @@ class RunwayPlatform(BasePlatform):
             else:
                 inventory = None
             transformed_data.append(
-                RunwayRecord(
-                    **raw_record,
+                BaseRecord(
+                    item_id=item_id,
+                    url=self._get_full_url(item_id),
+                    asof=asof,
                     in_stock=in_stock,
-                    inventory=inventory
+                    inventory=inventory,
+                    **raw_record
                 )
             )
         return transformed_data
