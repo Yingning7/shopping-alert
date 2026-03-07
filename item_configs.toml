@@ -1,0 +1,7 @@
+[runway]
+item_args = ["0725627802"]
+
+[zozotown]
+item_args = [
+    "https://zozo.jp/shop/dazzlin/goods/100200995/?did=161679313&rid=201165",
+]

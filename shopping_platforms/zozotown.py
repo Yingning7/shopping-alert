@@ -1,16 +1,18 @@
+import datetime as dt
 import regex as re
 import logging
-import datetime as dt
 
-from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
-from platforms import BaseRecord, BasePlatform
+from ._platform import BaseRecord, BasePlatform
 
 logger = logging.getLogger(__file__)
 
 
 class ZozotownPlatform(BasePlatform):
+    _platform = "zozotown"
+
     def acquire(self, url: str) -> str:
         logger.info(f"Acquiring data for url: {url}.")
         with sync_playwright() as p:
@@ -74,6 +76,7 @@ class ZozotownPlatform(BasePlatform):
                 inventory = None
             transformed_data.append(
                 BaseRecord(
+                    platform=self._platform,
                     url=url,
                     asof=asof,
                     in_stock=in_stock,
@@ -82,10 +85,3 @@ class ZozotownPlatform(BasePlatform):
                 )
             )
         return transformed_data
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    zozotown_platform = ZozotownPlatform()
-    transformed_data = zozotown_platform.run("https://zozo.jp/shop/dazzlin/goods/100200995/?did=161679313&rid=201165")
-    pass

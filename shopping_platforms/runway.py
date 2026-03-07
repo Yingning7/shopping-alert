@@ -1,16 +1,17 @@
+import datetime as dt
 import regex as re
 import logging
-import datetime as dt
 
 from bs4 import BeautifulSoup
 import requests
 
-from platforms import BaseRecord, BasePlatform
+from ._platform import BaseRecord, BasePlatform
 
 logger = logging.getLogger(__file__)
 
 
 class RunwayPlatform(BasePlatform):
+    _platform = "runway"
     _BASE_URL = "https://runway-webstore.com/ap/item/i/m/{item_id}"
 
     def _get_full_url(self, item_id: str) -> str:
@@ -70,6 +71,7 @@ class RunwayPlatform(BasePlatform):
                 inventory = None
             transformed_data.append(
                 BaseRecord(
+                    platform=self._platform,
                     item_id=item_id,
                     url=self._get_full_url(item_id),
                     asof=asof,
@@ -79,10 +81,3 @@ class RunwayPlatform(BasePlatform):
                 )
             )
         return transformed_data
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    runway_platform = RunwayPlatform()
-    transformed_data = runway_platform.run("0725627802")
-    pass

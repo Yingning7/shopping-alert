@@ -6,6 +6,7 @@ from pydantic import BaseModel, model_validator, HttpUrl
 
 
 class BaseRecord(BaseModel):
+    platform: str
     item_id: str
     name: str
     brand: str

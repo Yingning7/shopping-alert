@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import numpy as np
 import pandas as pd
 
-from db import PD_DTYPES
+from db_deprecated import PD_DTYPES
 
 logger = logging.getLogger(__file__)
 
