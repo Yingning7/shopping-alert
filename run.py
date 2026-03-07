@@ -15,6 +15,8 @@ def main() -> None:
         platform = PLATFORM_CLS[p]()
         for item in items:
             transformed_data = platform.run(item)
+            # TODO: db, check init schema, check tables, save data
+            # TODO: alerter
             pass
 
 
