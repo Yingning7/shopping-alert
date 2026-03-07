@@ -12,8 +12,8 @@ class BaseRecord(BaseModel):
     currency: str
     color: str
     size: str
-    original_price: int
-    current_price: int
+    original_price: float | None
+    current_price: float
     inventory: int | None
     in_stock: bool
     url: HttpUrl
