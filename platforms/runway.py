@@ -5,7 +5,7 @@ import datetime as dt
 from bs4 import BeautifulSoup
 import requests
 
-from shopping_platform import BaseRecord, BasePlatform
+from platforms import BaseRecord, BasePlatform
 
 logger = logging.getLogger(__file__)
 
