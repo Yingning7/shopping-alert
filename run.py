@@ -1,8 +1,7 @@
-from pathlib import Path
 import logging
 
-from utils import parse_args, Config
 from shopping_platforms import PLATFORM_CLS
+from utils import parse_args, Config
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(level=logging.INFO)
