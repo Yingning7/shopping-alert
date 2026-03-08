@@ -37,7 +37,7 @@ Use the included helper script to launch your local PostgreSQL 14 Docker contain
 Data extraction uses configuration targets stored in `configs/platforms.toml`. You can run the application directly from the root using:
 
 ```powershell
-uv run run.py --platform all
+uv run python run.py --platform all
 ```
 *(Or specify a specific platform by name, such as `--platform zozotown`)*
 
