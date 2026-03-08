@@ -1,11 +1,12 @@
 from __future__ import annotations
+from typing import Any
 
 from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
-from shopping_platforms import Platform
+from shopping_platforms import PlatformName
 
 
 def parse_args() -> Namespace:
@@ -13,30 +14,30 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--platform", 
         type=str, 
-        choices=[platform.value for platform in Platform] + ["all"],
+        choices=[platform_name.value for platform_name in PlatformName] + ["all"],
         required=True
     )
     return parser.parse_args()
 
 
-def load_item_configs(path: Path) -> dict[str, list[str]]:
+def load_platform_configs(path: Path) -> dict[str, dict[str, Any]]:
     with open(path, mode="rb") as fp:
         return tomllib.load(fp)
 
 
 @dataclass(frozen=True)
 class Config:
-    platform_items: dict[Platform, list[str]]
+    platforms_configs: dict[PlatformName, dict[str, Any]]
 
     @classmethod
     def from_args(cls, args: Namespace) -> Config:
-        item_configs = load_item_configs(Path(__file__).parent / "platform_configs.toml")
+        raw_platforms_configs = load_platform_configs(Path(__file__).parent / "configs/platforms.toml")
         if args.platform == "all":
-            platform_items = {
-                platform: item_configs[platform.value]["run_args"]
-                for platform in Platform
+            platforms_configs = {
+                platform_name: raw_platforms_configs[platform_name.value]
+                for platform_name in PlatformName
             }
         else:
-            platform = Platform(args.platform)
-            platform_items = {platform: item_configs[platform.value]["run_args"]}
-        return cls(platform_items=platform_items)
+            platform_name = PlatformName(args.platform)
+            platforms_configs = {platform_name: raw_platforms_configs[platform_name.value]}
+        return cls(platforms_configs=platforms_configs)

@@ -4,12 +4,12 @@ from .runway import RunwayPlatform
 from .zozotown import ZozotownPlatform
 
 
-class Platform(Enum):
+class PlatformName(Enum):
     RUNWAY = RunwayPlatform._platform
     ZOZOTOWN = ZozotownPlatform._platform
 
 
 PLATFORM_CLS = {
-    Platform.RUNWAY: RunwayPlatform,
-    Platform.ZOZOTOWN: ZozotownPlatform
+    PlatformName.RUNWAY: RunwayPlatform,
+    PlatformName.ZOZOTOWN: ZozotownPlatform
 }
