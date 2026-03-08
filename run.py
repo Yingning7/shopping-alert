@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.INFO)
 def main() -> None:
     args = parse_args()
     config = Config.from_args(args)
-    for p, items in config.p_items.items():
-        platform = PLATFORM_CLS[p]()
+    for platform, items in config.platform_items.items():
+        platform = PLATFORM_CLS[platform]()
         for item in items:
             transformed_data = platform.run(item)
             # TODO: db, check init schema, check tables, save data

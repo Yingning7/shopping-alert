@@ -13,7 +13,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--platform", 
         type=str, 
-        choices=[p.value for p in Platform] + ["all"],
+        choices=[platform.value for platform in Platform] + ["all"],
         required=True
     )
     return parser.parse_args()
@@ -26,17 +26,17 @@ def load_item_configs(path: Path) -> dict[str, list[str]]:
 
 @dataclass(frozen=True)
 class Config:
-    p_items: dict[Platform, list[str]]
+    platform_items: dict[Platform, list[str]]
 
     @classmethod
     def from_args(cls, args: Namespace) -> Config:
-        item_configs = load_item_configs(Path(__file__).parent / "item_configs.toml")
+        item_configs = load_item_configs(Path(__file__).parent / "platform_configs.toml")
         if args.platform == "all":
-            p_items = {
-                p: item_configs[p.value]["item_args"]
-                for p in Platform
+            platform_items = {
+                platform: item_configs[platform.value]["run_args"]
+                for platform in Platform
             }
         else:
-            p = Platform(args.platform)
-            p_items = {p: item_configs[p.value]["item_args"]}
-        return cls(p_items=p_items)
+            platform = Platform(args.platform)
+            platform_items = {platform: item_configs[platform.value]["run_args"]}
+        return cls(platform_items=platform_items)
