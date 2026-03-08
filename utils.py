@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any
+import logging
 
 from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass
@@ -8,8 +9,11 @@ import tomllib
 
 from shopping_platforms import PlatformName
 
+logger = logging.getLogger(__file__)
+
 
 def parse_args() -> Namespace:
+    logger.info("Parsing arguments.")
     parser = ArgumentParser(description="Shopping Alert")
     parser.add_argument(
         "--platform", 
@@ -21,6 +25,7 @@ def parse_args() -> Namespace:
 
 
 def load_platform_configs(path: Path) -> dict[str, dict[str, Any]]:
+    logger.info("Loading platform configs.")
     with open(path, mode="rb") as fp:
         return tomllib.load(fp)
 
@@ -31,6 +36,7 @@ class Config:
 
     @classmethod
     def from_args(cls, args: Namespace) -> Config:
+        logger.info("Constructing config from arguments.")
         raw_platforms_configs = load_platform_configs(Path(__file__).parent / "configs/platforms.toml")
         if args.platform == "all":
             platforms_configs = {

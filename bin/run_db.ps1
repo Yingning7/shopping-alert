@@ -3,7 +3,7 @@
     Script to easily manage local PostgreSQL docker container.
 .DESCRIPTION
     Available commands: start, stop, resume, terminate, bounce
-    Will use variables from db.ini if present.
+    Will use variables from db.env if present.
 #>
 
 param (
@@ -12,8 +12,8 @@ param (
     [string]$Command
 )
 
-# Load environment from db.ini located in the same directory as this script
-$envFile = Join-Path -Path $PSScriptRoot -ChildPath "db.ini"
+# Load environment from db.env located in the same directory as this script
+$envFile = Join-Path -Path $PSScriptRoot -ChildPath "db.env"
 
 if (Test-Path $envFile) {
     Write-Host "Loading environment variables from $envFile" -ForegroundColor Cyan
