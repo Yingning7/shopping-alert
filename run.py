@@ -19,7 +19,7 @@ def main() -> None:
         platform = PLATFORM_CLS[platform_name]()
         for args in platform_config["run_args"]:
             transformed_data = platform.run(args)
-            pass
+            database.insert_data(transformed_data)
     database.close()
     logger.info("Finished running shopping alert.")
 
