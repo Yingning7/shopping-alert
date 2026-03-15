@@ -9,7 +9,7 @@ class PlatformName(Enum):
     ZOZOTOWN = ZozotownPlatform._platform
 
 
-PLATFORM_CLS = {
+PLATFORM_CLS_SELECTOR = {
     PlatformName.RUNWAY: RunwayPlatform,
     PlatformName.ZOZOTOWN: ZozotownPlatform
 }

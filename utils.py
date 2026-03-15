@@ -3,7 +3,6 @@ from typing import Any
 import logging
 
 from argparse import ArgumentParser, Namespace
-from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
@@ -28,22 +27,3 @@ def load_platform_configs(path: Path) -> dict[str, dict[str, Any]]:
     logger.info("Loading platform configs.")
     with open(path, mode="rb") as fp:
         return tomllib.load(fp)
-
-
-@dataclass(frozen=True)
-class Config:
-    platforms_configs: dict[PlatformName, dict[str, Any]]
-
-    @classmethod
-    def from_args(cls, args: Namespace) -> Config:
-        logger.info("Constructing config from arguments.")
-        raw_platforms_configs = load_platform_configs(Path(__file__).parent / "configs/platforms.toml")
-        if args.platform == "all":
-            platforms_configs = {
-                platform_name: raw_platforms_configs[platform_name.value]
-                for platform_name in PlatformName
-            }
-        else:
-            platform_name = PlatformName(args.platform)
-            platforms_configs = {platform_name: raw_platforms_configs[platform_name.value]}
-        return cls(platforms_configs=platforms_configs)
