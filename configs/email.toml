@@ -1,5 +1,5 @@
 [gmail]
 smtp_server = "smtp.gmail.com"
 smtp_port = 465
-email_address = "shenyingningsyn@gmail.com"
-app_password = "GOOGLE APP PASSWORD"
+email_address = "<MY GMAIL ADDRESS>"
+app_password = "<MY GOOGLE APP PASSWORD>"
