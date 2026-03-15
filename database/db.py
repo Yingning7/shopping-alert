@@ -34,22 +34,24 @@ class Database:
             columns = [desc[0] for desc in cur.description]
         return pd.DataFrame(data, columns=columns)
 
-    def _insert_data(self, insert_sql: str, data: list[dict[str, Any]]) -> None:
+    def _run_insert_sql(self, insert_sql: str, data: list[dict[str, Any]]) -> None:
         with self.conn.cursor() as cur:
             cur.executemany(insert_sql, data)
         self.conn.commit()
 
-    def _process_platforms(self, df: pd.DataFrame) -> None:
+    def _insert_platforms(self, df: pd.DataFrame) -> None:
         platforms_exist = self._query_table(sql.QUERY_PLATFORMS)
         merged = pd.merge(df, platforms_exist, on="platform", how="left")
         platforms_to_upload = merged.loc[merged["platform_id"].isna()][["platform"]].drop_duplicates()
         if not platforms_to_upload.empty:
-            self._insert_data(sql.INSERT_PLATFORMS, platforms_to_upload.to_dict(orient="records"))
+            self._run_insert_sql(sql.INSERT_PLATFORMS, platforms_to_upload.to_dict(orient="records"))
 
     def insert_data(self, data: list[BaseRecord]) -> None:
         logger.info("Inserting data.")
         df = pd.DataFrame([record.model_dump() for record in data])
-        self._process_platforms(df)
+        self._insert_platforms(df)
+        platforms_current = self._query_table(sql.QUERY_PLATFORMS)
+        df = pd.merge(df, platforms_current, on="platform", how="left")
         pass
 
     def close(self) -> None:
