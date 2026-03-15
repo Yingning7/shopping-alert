@@ -17,7 +17,7 @@ def test_zozotown_acquire(mock_playwright):
     platform = ZozotownPlatform()
     html = platform.acquire("http://example.com")
     
-    mock_p.chromium.launch.assert_called_once_with(headless=False)
+    mock_p.chromium.launch.assert_called_once_with(headless=True)
     mock_browser.new_page.assert_called_once()
     mock_page.goto.assert_called_once_with("http://example.com", timeout=0)
     mock_browser.close.assert_called_once()
