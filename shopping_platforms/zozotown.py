@@ -16,7 +16,7 @@ class ZozotownPlatform(BasePlatform):
     def acquire(self, url: str) -> str:
         logger.info(f"Acquiring data for url: {url}.")
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+            browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             page.goto(url, timeout=0)
             html = page.content()
