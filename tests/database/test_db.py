@@ -6,7 +6,27 @@ from unittest.mock import patch, MagicMock
 from database.db import Database
 from shopping_platforms._platform import BaseRecord
 
-@patch("database.db.load_db_config")
+@patch("builtins.open", new_callable=MagicMock)
+@patch("tomllib.load")
+@patch("psycopg.connect")
+def test_load_db_config(mock_connect, mock_tomllib_load, mock_file):
+    mock_tomllib_load.return_value = {"postgres": {"host": "localhost", "port": 5432}}
+    
+    # Needs to bypass init calling psycopg.connect so we temporarily patch it out
+    with patch.object(Database, "_initialize"):
+        db = Database()
+        db._db_config = {"host": "localhost", "port": 5432}
+
+    from pathlib import Path
+    path = Path("dummy.toml")
+    result = db.load_db_config(path)
+    
+    # We assert tomllib.load was called once and config parsed
+    mock_tomllib_load.assert_called()
+    assert result == {"host": "localhost", "port": 5432}
+
+
+@patch.object(Database, "load_db_config")
 @patch("psycopg.connect")
 def test_database_init(mock_connect, mock_load_config):
     mock_load_config.return_value = {"host": "localhost"}
@@ -23,7 +43,7 @@ def test_database_init(mock_connect, mock_load_config):
     mock_conn.commit.assert_called_once()
 
 
-@patch("database.db.load_db_config")
+@patch.object(Database, "load_db_config")
 @patch("psycopg.connect")
 def test_query_table(mock_connect, mock_load_config):
     mock_conn = MagicMock()
@@ -43,7 +63,7 @@ def test_query_table(mock_connect, mock_load_config):
     assert df.to_dict(orient="records") == [{"platform_id": 1, "platform": "runway"}]
 
 
-@patch("database.db.load_db_config")
+@patch.object(Database, "load_db_config")
 @patch("psycopg.connect")
 def test_run_insert_sql(mock_connect, mock_load_config):
     mock_conn = MagicMock()
@@ -59,7 +79,7 @@ def test_run_insert_sql(mock_connect, mock_load_config):
 
 @patch.object(Database, "_run_insert_sql")
 @patch.object(Database, "_query_table")
-@patch("database.db.load_db_config")
+@patch.object(Database, "load_db_config")
 @patch("psycopg.connect")
 def test_insert_data_all_new(mock_connect, mock_load_config, mock_query, mock_insert):
     mock_conn = MagicMock()
@@ -92,13 +112,32 @@ def test_insert_data_all_new(mock_connect, mock_load_config, mock_query, mock_in
         asof=dt.datetime(2023, 1, 1, tzinfo=dt.timezone.utc)
     )
 
-    db.insert_data([record])
+    specs_ids = db.insert_data([record])
 
     assert mock_query.call_count == 5
     assert mock_insert.call_count == 4
+    assert specs_ids == [1]
 
 
-@patch("database.db.load_db_config")
+@patch.object(Database, "_query_table")
+@patch.object(Database, "load_db_config")
+@patch("psycopg.connect")
+def test_query_full_status_by_specs_ids(mock_connect, mock_load_config, mock_query):
+    mock_conn = MagicMock()
+    mock_connect.return_value = mock_conn
+    mock_query.return_value = pd.DataFrame([{"specs_id": 1, "current_price": 500}])
+    
+    db = Database()
+    df = db.query_full_status_by_specs_ids([1, 2])
+    
+    assert mock_query.call_count == 1
+    # Check that the query was formatted correctly with "1, 2" inside IN clause
+    args, _ = mock_query.call_args
+    assert "IN (1, 2)" in args[0]
+    assert not df.empty
+
+
+@patch.object(Database, "load_db_config")
 @patch("psycopg.connect")
 def test_database_close(mock_connect, mock_load_config):
     mock_conn = MagicMock()

@@ -1,2 +1,2 @@
 Set-Location -Path "$PSScriptRoot\.."
-uv run pytest
+uv run pytest tests/
