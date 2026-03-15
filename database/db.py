@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 import logging
+import tomllib
 
 import pandas as pd
 import numpy as np
@@ -8,7 +9,6 @@ import psycopg
 
 from shopping_platforms._platform import BaseRecord
 
-from .utils import load_db_config
 from . import sql
 
 logger = logging.getLogger(__file__)
@@ -17,10 +17,15 @@ logger = logging.getLogger(__file__)
 class Database:
     def __init__(self) -> None:
         logger.info("Initializing database.")
-        self.db_config = load_db_config(Path(__file__).parents[1] / "configs/db.toml")
+        self._db_config = self.load_db_config(Path(__file__).parents[1] / "configs/db.toml")
         logger.info("Connecting to database.")
-        self.conn = psycopg.connect(**self.db_config)
+        self.conn = psycopg.connect(**self._db_config)
         self._initialize()
+
+    def load_db_config(self, path: Path) -> dict[str, Any]:
+        logger.info("Loading database config.")
+        with open(path, mode="rb") as fp:
+            return tomllib.load(fp)["postgres"]
 
     def _initialize(self) -> None:
         logger.info("Initializing schemas and tables.")
@@ -69,7 +74,7 @@ class Database:
         status_to_upload = df[["specs_id", "original_price", "current_price", "inventory", "in_stock", "asof"]].replace({np.nan: None})
         self._run_insert_sql(sql.INSERT_STATUS, status_to_upload.to_dict(orient="records"))
 
-    def insert_data(self, data: list[BaseRecord]) -> None:
+    def insert_data(self, data: list[BaseRecord]) -> list[int]:
         logger.info("Inserting data.")
         df = pd.DataFrame([record.model_dump() for record in data])
         self._insert_platforms(df)
@@ -80,6 +85,11 @@ class Database:
         specs_current = self._query_table(sql.QUERY_SPECS)
         df = pd.merge(df, specs_current, on=["platform_id", "item_id", "color", "size"], how="inner")
         self._insert_status(df)
+        return df["specs_id"].tolist()
+
+    def query_full_status_by_specs_ids(self, specs_ids: list[int]) -> pd.DataFrame:
+        logger.info(f"Querying full status for the provided specs_ids.")
+        return self._query_table(sql.QUERY_FULL_STATUS_BY_SPECS_IDS.format(specs_ids=", ".join([str(specs_id) for specs_id in specs_ids])))
 
     def close(self) -> None:
         logger.info("Closing database connection.")

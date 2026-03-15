@@ -82,3 +82,28 @@ INSERT INTO {SCHEMA_NAME}.{TABLE_SPECS_NAME} (platform_id, item_id, color, size)
 INSERT_STATUS = f"""
 INSERT INTO {SCHEMA_NAME}.{TABLE_STATUS_NAME} (specs_id, original_price, current_price, inventory, in_stock, asof) VALUES (%(specs_id)s, %(original_price)s, %(current_price)s, %(inventory)s, %(in_stock)s, %(asof)s);
 """
+
+QUERY_FULL_STATUS_BY_SPECS_IDS = f"""
+SELECT
+    platform.platform_id,
+    item.item_id,
+    specs.specs_id,
+    status.status_id,
+    platform.platform,
+    item.name,
+    item.brand,
+    item.currency,
+    item.url,
+    specs.color,
+    specs.size,
+    status.original_price,
+    status.current_price,
+    status.inventory,
+    status.in_stock,
+    status.asof
+FROM {SCHEMA_NAME}.{TABLE_PLATFORMS_NAME} AS platform
+INNER JOIN {SCHEMA_NAME}.{TABLE_ITEMS_NAME} AS item ON platform.platform_id = item.platform_id
+INNER JOIN {SCHEMA_NAME}.{TABLE_SPECS_NAME} AS specs ON item.platform_id = specs.platform_id AND item.item_id = specs.item_id
+INNER JOIN {SCHEMA_NAME}.{TABLE_STATUS_NAME} AS status ON specs.specs_id = status.specs_id
+WHERE specs.specs_id IN ({{specs_ids}});
+"""
