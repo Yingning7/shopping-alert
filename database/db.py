@@ -3,6 +3,7 @@ from typing import Any
 import logging
 
 import pandas as pd
+import numpy as np
 import psycopg
 
 from shopping_platforms._platform import BaseRecord
@@ -46,13 +47,39 @@ class Database:
         if not platforms_to_upload.empty:
             self._run_insert_sql(sql.INSERT_PLATFORMS, platforms_to_upload.to_dict(orient="records"))
 
+    def _insert_items(self, df: pd.DataFrame) -> None:
+        items_exist = self._query_table(sql.QUERY_ITEMS)
+        items_to_upload = df.loc[
+            ~(
+                df["platform_id"].isin(items_exist["platform_id"])
+                & df["item_id"].isin(items_exist["item_id"])
+            )
+        ][["platform_id", "item_id", "name", "brand", "currency", "url"]].drop_duplicates()
+        if not items_to_upload.empty:
+            self._run_insert_sql(sql.INSERT_ITEMS, items_to_upload.to_dict(orient="records"))
+
+    def _insert_specs(self, df: pd.DataFrame) -> None:
+        specs_exist = self._query_table(sql.QUERY_SPECS)
+        merged = pd.merge(df, specs_exist, on=["platform_id", "item_id", "color", "size"], how="left")
+        specs_to_upload = merged.loc[merged["specs_id"].isna()][["platform_id", "item_id", "color", "size"]]
+        if not specs_to_upload.empty:
+            self._run_insert_sql(sql.INSERT_SPECS, specs_to_upload.to_dict(orient="records"))
+
+    def _insert_status(self, df: pd.DataFrame) -> None:
+        status_to_upload = df[["specs_id", "original_price", "current_price", "inventory", "in_stock", "asof"]].replace({np.nan: None})
+        self._run_insert_sql(sql.INSERT_STATUS, status_to_upload.to_dict(orient="records"))
+
     def insert_data(self, data: list[BaseRecord]) -> None:
         logger.info("Inserting data.")
         df = pd.DataFrame([record.model_dump() for record in data])
         self._insert_platforms(df)
         platforms_current = self._query_table(sql.QUERY_PLATFORMS)
-        df = pd.merge(df, platforms_current, on="platform", how="left")
-        pass
+        df = pd.merge(df, platforms_current, on="platform", how="inner")
+        self._insert_items(df)
+        self._insert_specs(df)
+        specs_current = self._query_table(sql.QUERY_SPECS)
+        df = pd.merge(df, specs_current, on=["platform_id", "item_id", "color", "size"], how="inner")
+        self._insert_status(df)
 
     def close(self) -> None:
         logger.info("Closing database connection.")

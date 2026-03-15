@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 import datetime as dt
 
-from pydantic import BaseModel, model_validator, HttpUrl
+from pydantic import BaseModel, model_validator, HttpUrl, field_validator
 
 
 class BaseRecord(BaseModel):
@@ -17,7 +17,7 @@ class BaseRecord(BaseModel):
     current_price: float
     inventory: int | None
     in_stock: bool
-    url: HttpUrl
+    url: str
     asof: dt.datetime
     
     @model_validator(mode="before")
@@ -27,6 +27,11 @@ class BaseRecord(BaseModel):
             if isinstance(v, str):
                 record[k] = v.strip()
         return record
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url(cls, url: str) -> str:
+        return str(HttpUrl(url))
 
 
 class BasePlatform(ABC):

@@ -54,8 +54,24 @@ INITIALIZE_DB = f"""
 {CREATE_TABLE_STATUS}
 """
 
+QUERY_PLATFORMS = f"SELECT platform_id, platform FROM {SCHEMA_NAME}.{TABLE_PLATFORMS_NAME};"
+
 INSERT_PLATFORMS = f"""
 INSERT INTO {SCHEMA_NAME}.{TABLE_PLATFORMS_NAME} (platform) VALUES (%(platform)s);
 """
 
-QUERY_PLATFORMS = f"SELECT platform_id, platform FROM {SCHEMA_NAME}.{TABLE_PLATFORMS_NAME};"
+QUERY_ITEMS = f"SELECT platform_id, item_id, name, brand, currency, url FROM {SCHEMA_NAME}.{TABLE_ITEMS_NAME};"
+
+INSERT_ITEMS = f"""
+INSERT INTO {SCHEMA_NAME}.{TABLE_ITEMS_NAME} (platform_id, item_id, name, brand, currency, url) VALUES (%(platform_id)s, %(item_id)s, %(name)s, %(brand)s, %(currency)s, %(url)s);
+"""
+
+QUERY_SPECS = f"SELECT specs_id, platform_id, item_id, color, size FROM {SCHEMA_NAME}.{TABLE_SPECS_NAME};"
+
+INSERT_SPECS = f"""
+INSERT INTO {SCHEMA_NAME}.{TABLE_SPECS_NAME} (platform_id, item_id, color, size) VALUES (%(platform_id)s, %(item_id)s, %(color)s, %(size)s);
+"""
+
+INSERT_STATUS = f"""
+INSERT INTO {SCHEMA_NAME}.{TABLE_STATUS_NAME} (specs_id, original_price, current_price, inventory, in_stock, asof) VALUES (%(specs_id)s, %(original_price)s, %(current_price)s, %(inventory)s, %(in_stock)s, %(asof)s);
+"""
