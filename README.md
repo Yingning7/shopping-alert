@@ -18,6 +18,7 @@ A robust, Python-based data engineering application designed to track pricing, i
 
 ## 🚀 Prerequisites
 
+- **Ubuntu 22.04** (Natively built and tested on Ubuntu 22.04. Other OS environments may need to use Docker to avoid Playwright dependency issues.)
 - **Python 3.12+**
 - **[uv](https://github.com/astral-sh/uv)** Package Manager
 - **Docker Desktop** / **Docker Engine** (For the PostgreSQL database and/or running the whole app)
