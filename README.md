@@ -12,7 +12,7 @@ A robust, Python-based data engineering application designed to track pricing, i
 - **Robust Database Integration**: Uses `psycopg` and `pandas` for seamless data ingestion. The database structure clearly separates item dimensions (brands, names, colors, sizes) from factual status snapshots (prices, inventory counts).
 - **Smart Automated Alerts**: Evaluates temporal changes locally. If a product's price drops, a variant goes back in-stock, or its remaining inventory count drops, it fires off an HTML-formatted alert via Gmail's SMTP.
 - **Modern Python Ecosystem**: Managed entirely by `uv` for lightning-fast backend virtual environments and dependency management.
-- **Containerization & Dev Scripts**: Includes a `Dockerfile` for execution anywhere, and PowerShell helper scripts in `bin/` to instantly spin up database containers for local development.
+- **Containerization & Dev Scripts**: Includes a `Dockerfile` for execution anywhere, and Bash helper scripts in `bin/` to instantly spin up database containers for local development.
 
 ---
 
@@ -71,45 +71,28 @@ Before running the application, populate the `.toml` files inside the `configs/`
 
 ## 💻 Running Locally (Development)
 
-### Windows Users
-
-1. **Initial Setup**: Run the included setup script to sync `uv` dependencies and install Playwright browser binaries.
-   ```powershell
-   .\bin\setup.ps1
+1. **Initial Setup**: Run the included setup script to check for `uv`, sync dependencies, and install Playwright browser binaries.
+   ```bash
+   ./bin/setup.sh
    ```
-2. **Start Database Container**: We provide a PowerShell script to easily manage a local `postgres:14` Docker container. Feel free to define custom ports/passwords in `bin/db.env`.
-   ```powershell
+2. **Start Database Container**: We provide a bash script to easily manage a local `postgres:14` Docker container. Feel free to define custom ports/passwords in `bin/db.env`.
+   ```bash
    # Starts a fresh postgres DB on port 5432
-   .\bin\run_db.ps1 start
+   ./bin/run_db.sh start
    ```
    *(Other commands include: `stop`, `resume`, `terminate`, `bounce`)*
 3. **Execute the Application**:  
    Run the overarching `run.py` script. You can specify a single platform or run them all.
-   ```powershell
+   ```bash
    uv run python run.py --platform all
    # OR: uv run python run.py --platform runway
-   ```
-
-### Linux / Ubuntu Users
-
-1. **Initial Setup**: Install `uv`, sync the environment, and install Playwright.
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   uv sync
-   uv run playwright install chromium
-   uv run playwright install-deps
-   ```
-2. **Start Database**: Use your preferred method to launch a PostgreSQL instance pointing to the credentials in your `db.toml`.
-3. **Execute the Application**:
-   ```bash
-   uv run python run.py --platform all
    ```
 
 ---
 
 ## 🐳 Running via Docker
 
-You can run the entire application fully containerized using the provided `Dockerfile`! This method is highly recommended for production as it automatically handles all system-level Playwright dependencies.
+You can run the entire application fully containerized using the provided `Dockerfile` (based on Ubuntu 22.04). This method is highly recommended for production as it automatically handles all system-level Playwright dependencies.
 
 1. **Build the image**:
    ```bash
@@ -131,7 +114,7 @@ The project is fully covered by `pytest` utilizing `unittest.mock` to isolate da
 
 To run the full unit test suite:
 ```bash
-uv run pytest tests/ -v
+./bin/run_test.sh
 ```
 
 ---

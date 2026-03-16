@@ -1,34 +1,36 @@
-FROM python:3.12-bookworm
+FROM ubuntu:22.04
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    UV_SYSTEM_PYTHON=1
+# Set non-interactive to avoid apt-get prompts
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-# Install required system dependencies (Playwright needs these)
+# Install prerequisites: curl (for uv install), sudo (for our script)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:${PATH}"
+# Create a non-root user (playwright deps often prefer this to avoid root complications)
+RUN useradd -ms /bin/bash appuser && echo "appuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Create working directory
+# Set working directory
 WORKDIR /app
 
-# Copy dependency files first for caching
-COPY pyproject.toml uv.lock ./
+# Switch to the new user
+USER appuser
 
-# Install dependencies via uv
-RUN uv sync
+# Install uv using the official curl script
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Copy the rest of the application code
-COPY . .
+# Add uv to the path
+ENV PATH="/home/appuser/.local/bin:${PATH}"
 
-# Install Playwright browser binaries and OS dependencies
-RUN uv run playwright install chromium
-RUN uv run playwright install-deps
+# Copy everything, assigning ownership to appuser
+COPY --chown=appuser:appuser . .
+
+# Run the setup script which does `uv sync`, `install`, and `install-deps`
+RUN chmod +x bin/setup.sh && ./bin/setup.sh
 
 # Default command to run the application
 CMD ["uv", "run", "python", "run.py", "--platform", "all"]
